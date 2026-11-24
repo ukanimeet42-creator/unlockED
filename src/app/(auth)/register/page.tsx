@@ -22,11 +22,14 @@ export default function RegisterPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    if (typeof document !== "undefined") {
+      document.cookie = `unlocked_demo_role=${selectedRole}; path=/; max-age=86400; SameSite=Lax`;
+    }
+    setRole(selectedRole);
     setTimeout(() => {
-      setRole(selectedRole);
       setIsLoading(false);
       router.push("/onboarding");
-    }, 600);
+    }, 400);
   };
 
   return (

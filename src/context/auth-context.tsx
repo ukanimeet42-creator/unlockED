@@ -51,8 +51,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ]);
   const [resume, setResume] = useState<Resume>(INITIAL_RESUME);
 
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.cookie = `unlocked_demo_role=${role}; path=/; max-age=86400; SameSite=Lax`;
+    }
+  }, [role]);
+
   const setRole = (newRole: UserRole) => {
     setRoleState(newRole);
+    if (typeof document !== "undefined") {
+      document.cookie = `unlocked_demo_role=${newRole}; path=/; max-age=86400; SameSite=Lax`;
+    }
     if (newRole === "student") {
       setUser({
         ...INITIAL_STUDENT_PROFILE,

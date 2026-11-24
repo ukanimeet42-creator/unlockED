@@ -17,9 +17,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased flex flex-col selection:bg-[#8B5CF6]/30 selection:text-[#F5F3FF]">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider defaultTheme="dark">
           <AuthProvider>
             <Suspense fallback={<div className="h-16 w-full border-b border-[#232336] bg-[#13131A]" />}>
               <Navbar />

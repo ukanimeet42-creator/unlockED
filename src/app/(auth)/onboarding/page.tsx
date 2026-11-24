@@ -45,13 +45,16 @@ export default function OnboardingPage() {
   const handleFinish = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    if (typeof document !== "undefined") {
+      document.cookie = `unlocked_demo_role=${selectedRole}; path=/; max-age=86400; SameSite=Lax`;
+    }
+    setRole(selectedRole);
     setTimeout(() => {
-      setRole(selectedRole);
       setIsSaving(false);
       if (selectedRole === "student") router.push("/student");
       else if (selectedRole === "recruiter") router.push("/recruiter");
       else router.push("/admin");
-    }, 600);
+    }, 300);
   };
 
   return (

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { NotificationPopover } from "./notification-popover";
@@ -24,6 +24,7 @@ import {
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, role, setRole, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -104,8 +105,11 @@ export function Navbar() {
           <div className="hidden sm:flex items-center p-1 rounded-xl bg-[#101018] border border-[#232336] text-[11px] font-semibold">
             <span className="text-[#64748B] px-2 text-[10px] uppercase tracking-wider">Role:</span>
             <button
-              onClick={() => setRole("student")}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
+              onClick={() => {
+                setRole("student");
+                if (isDashboard) router.push("/student");
+              }}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 role === "student"
                   ? "bg-[#8B5CF6] text-white shadow-sm"
                   : "text-[#94A3B8] hover:text-[#F5F3FF]"
@@ -114,8 +118,11 @@ export function Navbar() {
               Student
             </button>
             <button
-              onClick={() => setRole("recruiter")}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
+              onClick={() => {
+                setRole("recruiter");
+                if (isDashboard) router.push("/recruiter");
+              }}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 role === "recruiter"
                   ? "bg-[#6366F1] text-white shadow-sm"
                   : "text-[#94A3B8] hover:text-[#F5F3FF]"
@@ -124,8 +131,11 @@ export function Navbar() {
               Recruiter
             </button>
             <button
-              onClick={() => setRole("admin")}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
+              onClick={() => {
+                setRole("admin");
+                if (isDashboard) router.push("/admin");
+              }}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 role === "admin"
                   ? "bg-[#22C55E] text-slate-950 font-bold shadow-sm"
                   : "text-[#94A3B8] hover:text-[#F5F3FF]"
@@ -151,7 +161,7 @@ export function Navbar() {
                 : "/admin"
             }
           >
-            <Button variant="secondary" size="sm" className="hidden lg:inline-flex text-xs">
+            <Button variant="secondary" size="sm" className="hidden sm:inline-flex text-xs">
               Dashboard
             </Button>
           </Link>

@@ -86,6 +86,9 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Check demo mode cookie
+  const demoRole = request.cookies.get("unlocked_demo_role")?.value;
+
   // Refresh session
   const {
     data: { user },
@@ -93,6 +96,12 @@ export async function updateSession(request: NextRequest) {
 
   // If user is not authenticated and trying to access protected route
   if (!user && !isPublicRoute(path)) {
+    // If user is exploring in demo mode or has no active Supabase session yet,
+    // allow access to role workspaces without blocking them.
+    if (demoRole || !hasAuthCookie) {
+      return supabaseResponse;
+    }
+
     const url = request.nextUrl.clone();
     url.pathname = ROUTES.LOGIN;
     url.searchParams.set("redirectTo", path);

@@ -21,13 +21,16 @@ export default function LoginPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    if (typeof document !== "undefined") {
+      document.cookie = `unlocked_demo_role=${selectedRole}; path=/; max-age=86400; SameSite=Lax`;
+    }
+    setRole(selectedRole);
     setTimeout(() => {
-      setRole(selectedRole);
       setIsLoading(false);
       if (selectedRole === "student") router.push("/student");
       else if (selectedRole === "recruiter") router.push("/recruiter");
       else router.push("/admin");
-    }, 600);
+    }, 300);
   };
 
   const handleDemoFill = (roleChoice: UserRole) => {
