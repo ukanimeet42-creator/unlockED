@@ -8,19 +8,19 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-purple-500/10 text-purple-700 dark:text-[#C4B5FD] border border-purple-500/20 dark:border-[rgba(139,92,246,0.3)]",
+          "bg-[#10B981]/15 text-[#34D399] border border-[#10B981]/30",
         emerald:
-          "bg-emerald-500/10 text-emerald-700 dark:text-[#22C55E] border border-emerald-500/20 dark:border-[rgba(34,197,94,0.25)]",
+          "bg-[#10B981]/15 text-[#00DC82] border border-[#10B981]/30",
         amber:
-          "bg-amber-500/10 text-amber-700 dark:text-[#F59E0B] border border-amber-500/20 dark:border-[rgba(245,158,11,0.25)]",
+          "bg-[#F59E0B]/15 text-[#FBBF24] border border-[#F59E0B]/30",
         indigo:
-          "bg-indigo-500/10 text-indigo-700 dark:text-[#A5B4FC] border border-indigo-500/20 dark:border-[rgba(99,102,241,0.3)]",
+          "bg-[#059669]/20 text-[#6EE7B7] border border-[#059669]/30",
         error:
-          "bg-rose-500/10 text-rose-700 dark:text-[#F87171] border border-rose-500/20 dark:border-[rgba(239,68,68,0.25)]",
+          "bg-rose-500/15 text-[#F87171] border border-rose-500/30",
         outline:
-          "border border-slate-200 dark:border-[#232336] bg-slate-50 dark:bg-[#101018] text-slate-700 dark:text-[#94A3B8]",
+          "border border-[#143326] bg-[#0A1913] text-[#8FA69B]",
         secondary:
-          "bg-slate-100 dark:bg-[#1F1F26] text-slate-800 dark:text-[#E4E1EC] border border-slate-200 dark:border-[#2A2931]",
+          "bg-[#0F271D] text-[#ECFDF5] border border-[#16382C]",
       },
     },
     defaultVariants: {
@@ -42,10 +42,10 @@ function Badge({ className, variant, dot = false, children, ...props }: BadgePro
         <span
           className={cn(
             "w-1.5 h-1.5 rounded-full shrink-0",
-            variant === "emerald" && "bg-[#22C55E] animate-pulse",
+            variant === "emerald" && "bg-[#00DC82] animate-pulse",
             variant === "amber" && "bg-[#F59E0B]",
             variant === "error" && "bg-[#EF4444]",
-            (!variant || variant === "default") && "bg-[#8B5CF6]"
+            (!variant || variant === "default") && "bg-[#10B981]"
           )}
         />
       )}

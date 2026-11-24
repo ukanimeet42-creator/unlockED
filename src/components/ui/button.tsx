@@ -4,28 +4,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer",
   {
     variants: {
       variant: {
         default:
-          "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_1px_2px_rgba(0,0,0,0.4)] active:scale-[0.98]",
+          "bg-[#10B981] text-slate-950 font-bold hover:bg-[#059669] shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98]",
         gradient:
-          "bg-gradient-to-r from-[#A078FF] to-[#8B5CF6] text-white font-semibold shadow-lg shadow-[#8B5CF6]/20 hover:shadow-[#8B5CF6]/35 hover:brightness-105 active:scale-[0.98]",
+          "bg-gradient-to-r from-[#00DC82] to-[#10B981] text-slate-950 font-bold shadow-lg shadow-[#10B981]/25 hover:shadow-[#10B981]/40 hover:brightness-105 active:scale-[0.98]",
         secondary:
-          "bg-slate-100 dark:bg-[#1C1C2B] text-slate-800 dark:text-[#F5F3FF] border border-slate-200 dark:border-[#232336] hover:bg-slate-200 dark:hover:bg-[#25253A] hover:border-[#8B5CF6] active:scale-[0.98]",
+          "bg-[#0A1913] text-[#ECFDF5] border border-[#16382C] hover:bg-[#0E241B] hover:border-[#10B981] active:scale-[0.98]",
         outline:
-          "border border-slate-300 dark:border-[#232336] bg-transparent text-slate-700 dark:text-[#E4E1EC] hover:bg-slate-100 dark:hover:bg-[#151520] hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-[#363654]",
+          "border border-[#16382C] bg-transparent text-[#D1FAE5] hover:bg-[#0A1913] hover:text-white hover:border-[#10B981]",
         ghost:
-          "text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#151520] hover:text-slate-900 dark:hover:text-[#F5F3FF]",
+          "text-[#8FA69B] hover:bg-[#0A1913] hover:text-[#ECFDF5]",
         destructive:
           "bg-[#EF4444] text-white hover:bg-[#DC2626] shadow-sm",
         success:
-          "bg-[#22C55E] text-white hover:bg-[#16A34A] shadow-sm shadow-[#22C55E]/20",
+          "bg-[#10B981] text-slate-950 font-bold hover:bg-[#059669] shadow-sm shadow-[#10B981]/20",
         amber:
           "bg-[#F59E0B] text-slate-950 font-semibold hover:bg-[#D97706] shadow-sm",
         link:
-          "text-[#8B5CF6] underline-offset-4 hover:underline p-0 h-auto",
+          "text-[#10B981] underline-offset-4 hover:underline p-0 h-auto",
       },
       size: {
         default: "h-10 px-4 py-2",
