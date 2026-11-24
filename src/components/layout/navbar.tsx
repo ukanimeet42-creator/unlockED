@@ -34,7 +34,7 @@ export function Navbar() {
     pathname.startsWith("/admin");
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#232336] bg-[#13131A]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-[#232336] bg-white/90 dark:bg-[#13131A]/90 backdrop-blur-xl transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand */}
         <div className="flex items-center gap-6">

@@ -278,15 +278,26 @@ html.light [class*="bg-[#34343C]"] {
   background-color: #F1F5F9 !important;
 }
 
+/* Eliminate dark background gradients in Light Mode */
+html.light [class*="from-[#0E0E15]"],
+html.light [class*="from-[#0B0B12]"],
+html.light [class*="from-[#13131A]"],
+html.light [class*="to-[#13131A]"],
+html.light [class*="to-[#0B0B12]"],
+html.light [class*="to-[#0E0E15]"] {
+  background-image: none !important;
+  background-color: #F1F5F9 !important;
+}
+
 /* Opacity variants */
 html.light [class*="bg-[#13131A]/"] {
-  background-color: rgba(255, 255, 255, 0.92) !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
 }
 html.light [class*="bg-[#0B0B12]/"] {
-  background-color: rgba(248, 250, 252, 0.92) !important;
+  background-color: rgba(248, 250, 252, 0.94) !important;
 }
 html.light [class*="bg-[#151520]/"] {
-  background-color: rgba(255, 255, 255, 0.92) !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
 }
 html.light [class*="bg-[#101018]/"] {
   background-color: rgba(241, 245, 249, 0.85) !important;
@@ -318,6 +329,9 @@ html.light [class*="text-[#94A3B8]"] {
 }
 html.light [class*="text-[#CBC3D7]"] {
   color: #64748B !important;
+}
+html.light [class*="text-[#232336]"] {
+  color: #E2E8F0 !important;
 }
 
 /* High contrast for brand badges in Light Mode */

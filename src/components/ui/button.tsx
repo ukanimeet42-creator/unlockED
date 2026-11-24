@@ -13,11 +13,11 @@ const buttonVariants = cva(
         gradient:
           "bg-gradient-to-r from-[#A078FF] to-[#8B5CF6] text-white font-semibold shadow-lg shadow-[#8B5CF6]/20 hover:shadow-[#8B5CF6]/35 hover:brightness-105 active:scale-[0.98]",
         secondary:
-          "bg-[#1C1C2B] text-[#F5F3FF] border border-[#232336] hover:bg-[#25253A] hover:border-[#8B5CF6] active:scale-[0.98]",
+          "bg-slate-100 dark:bg-[#1C1C2B] text-slate-800 dark:text-[#F5F3FF] border border-slate-200 dark:border-[#232336] hover:bg-slate-200 dark:hover:bg-[#25253A] hover:border-[#8B5CF6] active:scale-[0.98]",
         outline:
-          "border border-[#232336] bg-transparent text-[#E4E1EC] hover:bg-[#151520] hover:text-white hover:border-[#363654]",
+          "border border-slate-300 dark:border-[#232336] bg-transparent text-slate-700 dark:text-[#E4E1EC] hover:bg-slate-100 dark:hover:bg-[#151520] hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-[#363654]",
         ghost:
-          "text-[#94A3B8] hover:bg-[#151520] hover:text-[#F5F3FF]",
+          "text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#151520] hover:text-slate-900 dark:hover:text-[#F5F3FF]",
         destructive:
           "bg-[#EF4444] text-white hover:bg-[#DC2626] shadow-sm",
         success:

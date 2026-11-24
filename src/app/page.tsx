@@ -85,7 +85,7 @@ export default function HomePage() {
   const currentPath = pathfinderData[selectedTrack];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0B0B12]">
+    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0B0B12] transition-colors">
       {/* Top Ambient Glow Field */}
       <div className="relative w-full overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[720px] h-[360px] bg-gradient-to-b from-[#8B5CF6]/20 via-[#3131C0]/10 to-transparent blur-3xl pointer-events-none rounded-full" />
@@ -104,7 +104,7 @@ export default function HomePage() {
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-[#F5F3FF] leading-[1.1]">
               Your potential deserves an{" "}
-              <span className="bg-gradient-to-r from-[#D0BCFF] via-[#8B5CF6] to-[#22C55E] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#7C3AED] via-[#6366F1] to-[#16A34A] dark:from-[#D0BCFF] dark:via-[#8B5CF6] dark:to-[#22C55E] bg-clip-text text-transparent">
                 opportunity.
               </span>
             </h1>
@@ -698,7 +698,7 @@ export default function HomePage() {
       </section>
 
       {/* FINAL CALL TO ACTION */}
-      <section className="py-20 bg-gradient-to-b from-[#0E0E15] to-[#13131A] border-t border-[#232336]">
+      <section className="py-20 bg-slate-100/80 dark:bg-gradient-to-b dark:from-[#0E0E15] dark:to-[#13131A] border-t border-slate-200 dark:border-[#232336] transition-colors">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <Badge variant="default" className="mb-4">
             Start Your Transformation

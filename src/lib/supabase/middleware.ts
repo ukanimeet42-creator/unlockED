@@ -80,6 +80,12 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Fast-path: If user has no auth session cookie and is on a public route, skip remote check
+  const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
+  if (!hasAuthCookie && isPublicRoute(path)) {
+    return supabaseResponse;
+  }
+
   // Refresh session
   const {
     data: { user },

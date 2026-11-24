@@ -70,7 +70,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`sticky top-16 h-[calc(100vh-4rem)] border-r border-[#232336] bg-[#0E0E15] transition-all duration-200 flex flex-col justify-between select-none z-30 ${
+      className={`sticky top-16 h-[calc(100vh-4rem)] border-r border-slate-200 dark:border-[#232336] bg-slate-50 dark:bg-[#0E0E15] transition-all duration-200 flex flex-col justify-between select-none z-30 ${
         collapsed ? "w-16" : "w-64"
       }`}
     >

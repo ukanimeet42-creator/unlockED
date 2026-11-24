@@ -4,7 +4,7 @@ import { Sparkles, Shield, Globe, Heart } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="border-t border-[#232336] bg-[#0E0E15] text-[#94A3B8] text-xs">
+    <footer className="border-t border-slate-200 dark:border-[#232336] bg-white dark:bg-[#0E0E15] text-[#94A3B8] text-xs transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           {/* Brand info */}
