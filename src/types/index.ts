@@ -51,6 +51,35 @@ export interface Course {
   enrolled_count?: number;
 }
 
+export interface LessonQuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+export interface LessonExample {
+  title: string;
+  language: string;
+  code: string;
+  explanation: string;
+  output?: string;
+}
+
+export interface LessonTheorySection {
+  heading: string;
+  body: string;
+  key_points?: string[];
+}
+
+export interface LessonChallenge {
+  prompt: string;
+  starter_code?: string;
+  solution_code?: string;
+  explanation?: string;
+}
+
 export interface Lesson {
   id: string;
   course_id: string;
@@ -62,6 +91,12 @@ export interface Lesson {
   is_published: boolean;
   created_at: string;
   updated_at: string;
+  summary?: string;
+  learning_objectives?: string[];
+  theory_sections?: LessonTheorySection[];
+  examples?: LessonExample[];
+  quiz?: LessonQuizQuestion[];
+  challenge?: LessonChallenge;
 }
 
 export interface Enrollment {

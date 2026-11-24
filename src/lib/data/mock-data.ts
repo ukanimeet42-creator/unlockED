@@ -1,10 +1,11 @@
-import { Course, Job, Assessment, Skill, Profile, Project, Resume, Company, Notification } from "@/types";
+import { Course, Job, Assessment, Skill, Profile, Project, Resume, Company, Notification, Lesson } from "@/types";
+import { REAL_COURSES, REAL_LESSONS, REAL_SKILLS } from "./course-data";
 
-export const INITIAL_SKILLS: Skill[] = [];
+export const INITIAL_SKILLS: Skill[] = REAL_SKILLS;
 
-export const INITIAL_COURSES: Course[] = [];
+export const INITIAL_COURSES: Course[] = REAL_COURSES;
 
-export const INITIAL_LESSONS: Record<string, { id: string; title: string; content: string; order_index: number; duration_minutes: number }[]> = {};
+export const INITIAL_LESSONS: Record<string, Lesson[]> = REAL_LESSONS;
 
 export const INITIAL_ASSESSMENTS: Assessment[] = [];
 
