@@ -30,8 +30,30 @@ export default function CourseDetailPage({
   const { id } = use(params);
   const { enrolledCourseIds, enrollInCourse, completedLessons } = useAuth();
 
-  const course = INITIAL_COURSES.find((c) => c.id === id) || INITIAL_COURSES[0];
-  const lessons = INITIAL_LESSONS[id] || INITIAL_LESSONS["c1"] || [];
+  const course = INITIAL_COURSES.find((c) => c.id === id);
+  const lessons = id && INITIAL_LESSONS[id] ? INITIAL_LESSONS[id] : [];
+
+  if (!course) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-300">
+        <div>
+          <Link
+            href="/student/courses"
+            className="inline-flex items-center gap-1.5 text-xs text-[#8FA69B] hover:text-[#F0FDF4] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to All Courses</span>
+          </Link>
+        </div>
+        <div className="p-12 rounded-3xl bg-[#0A1913] border border-[#143326] text-center">
+          <BookOpen className="w-12 h-12 text-[#143326] mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-[#F0FDF4]">Course not found</h2>
+          <p className="text-sm text-[#8FA69B] mt-2">No course is available at this link.</p>
+        </div>
+      </div>
+    );
+  }
+
   const isEnrolled = enrolledCourseIds.includes(course.id);
 
   const completedCount = lessons.filter((l) => completedLessons.includes(l.id)).length;

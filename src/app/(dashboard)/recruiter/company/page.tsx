@@ -10,13 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { INITIAL_COMPANIES } from "@/lib/data/mock-data";
 
 export default function RecruiterCompanyPage() {
-  const company = INITIAL_COMPANIES[0];
-  const [name, setName] = useState(company.name);
-  const [industry, setIndustry] = useState(company.industry || "FinTech & Cloud Infrastructure");
-  const [location, setLocation] = useState(company.location || "San Francisco, CA (Hybrid)");
-  const [size, setSize] = useState(company.size || "250-500 employees");
-  const [website, setWebsite] = useState(company.website || "https://finscale.example.com");
-  const [description, setDescription] = useState(company.description || "");
+  const company = INITIAL_COMPANIES[0] || null;
+  const [name, setName] = useState(company?.name || "");
+  const [industry, setIndustry] = useState(company?.industry || "");
+  const [location, setLocation] = useState(company?.location || "");
+  const [size, setSize] = useState(company?.size || "");
+  const [website, setWebsite] = useState(company?.website || "");
+  const [description, setDescription] = useState(company?.description || "");
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Profile, UserRole, Course, Job, Application, AssessmentAttempt, Resume } from "@/types";
-import { INITIAL_STUDENT_PROFILE, INITIAL_RESUME, INITIAL_COURSES, INITIAL_JOBS } from "@/lib/data/mock-data";
+import { INITIAL_STUDENT_PROFILE, INITIAL_RESUME } from "@/lib/data/mock-data";
 
 interface AuthContextType {
   user: Profile | null;
@@ -28,27 +28,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<UserRole>("student");
   const [user, setUser] = useState<Profile | null>(INITIAL_STUDENT_PROFILE);
-  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>(["c1"]);
-  const [completedLessons, setCompletedLessons] = useState<string[]>(["l1"]);
-  const [savedJobIds, setSavedJobIds] = useState<string[]>(["j1"]);
-  const [appliedJobs, setAppliedJobs] = useState<{ jobId: string; appliedAt: string; status: string }[]>([
-    { jobId: "j1", appliedAt: "2024-11-18T10:00:00.000Z", status: "shortlisted" },
-  ]);
-  const [assessmentAttempts, setAssessmentAttempts] = useState<AssessmentAttempt[]>([
-    {
-      id: "att-1",
-      student_id: INITIAL_STUDENT_PROFILE.id,
-      assessment_id: "a1",
-      score: 4,
-      total_points: 4,
-      percentage: 100,
-      answers: { q1: 1, q2: 1, q3: 2, q4: 1 },
-      started_at: "2024-11-19T09:00:00.000Z",
-      completed_at: "2024-11-19T09:10:00.000Z",
-      time_spent_seconds: 540,
-      passed: true,
-    },
-  ]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
+  const [appliedJobs, setAppliedJobs] = useState<{ jobId: string; appliedAt: string; status: string }[]>([]);
+  const [assessmentAttempts, setAssessmentAttempts] = useState<AssessmentAttempt[]>([]);
   const [resume, setResume] = useState<Resume>(INITIAL_RESUME);
 
   useEffect(() => {
@@ -63,38 +47,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       document.cookie = `unlocked_demo_role=${newRole}; path=/; max-age=86400; SameSite=Lax`;
     }
     if (newRole === "student") {
-      setUser({
-        ...INITIAL_STUDENT_PROFILE,
-        role: "student",
-      });
+      setUser(INITIAL_STUDENT_PROFILE);
     } else if (newRole === "recruiter") {
       setUser({
-        id: "rec1",
-        email: "david.vance@finscale.example.com",
-        full_name: "David Vance",
-        avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+        id: "recruiter-user",
+        email: "recruiter@unlocked.edu",
+        full_name: "Recruiter",
+        avatar_url: null,
         role: "recruiter",
-        bio: "VP of Engineering at FinScale Technologies. Hiring high-aptitude distributed systems and cloud infrastructure engineers.",
-        phone: "+1 (555) 987-6543",
-        location: "San Francisco, CA",
-        website: "https://finscale.example.com",
+        bio: "",
+        phone: "",
+        location: "",
+        website: "",
         github_url: null,
-        linkedin_url: "https://linkedin.com/in/david-vance-vp",
+        linkedin_url: null,
         onboarding_completed: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
     } else {
       setUser({
-        id: "admin1",
+        id: "admin-user",
         email: "admin@unlocked.edu",
-        full_name: "UnlockED Admin",
-        avatar_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
+        full_name: "Admin",
+        avatar_url: null,
         role: "admin",
-        bio: "Platform Administrator & Curriculum Lead at UnlockED.",
-        phone: "+1 (555) 000-0000",
-        location: "Headquarters",
-        website: "https://unlocked.edu",
+        bio: "",
+        phone: "",
+        location: "",
+        website: "",
         github_url: null,
         linkedin_url: null,
         onboarding_completed: true,
@@ -143,8 +124,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    // Reset to student demo
-    setRole("student");
+    setUser(null);
+    setRoleState("student");
+    if (typeof document !== "undefined") {
+      document.cookie = `unlocked_demo_role=student; path=/; max-age=86400; SameSite=Lax`;
+    }
   };
 
   return (

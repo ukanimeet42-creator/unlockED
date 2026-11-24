@@ -2,13 +2,12 @@
 
 import React, { useState } from "react";
 import { Bell, Check, Sparkles, BookOpen, Briefcase, Award } from "lucide-react";
-import { INITIAL_NOTIFICATIONS } from "@/lib/data/mock-data";
 import { Notification } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 
 export function NotificationPopover() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

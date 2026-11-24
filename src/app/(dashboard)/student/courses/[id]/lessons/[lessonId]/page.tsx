@@ -30,11 +30,32 @@ export default function LessonViewerPage({
   const { id, lessonId } = use(params);
   const { completedLessons, markLessonComplete } = useAuth();
 
-  const course = INITIAL_COURSES.find((c) => c.id === id) || INITIAL_COURSES[0];
-  const lessons = INITIAL_LESSONS[id] || INITIAL_LESSONS["c1"] || [];
+  const course = INITIAL_COURSES.find((c) => c.id === id);
+  const lessons = id && INITIAL_LESSONS[id] ? INITIAL_LESSONS[id] : [];
   const currentIndex = lessons.findIndex((l) => l.id === lessonId);
-  const currentLesson = lessons[currentIndex >= 0 ? currentIndex : 0];
-  const nextLesson = lessons[currentIndex + 1];
+  const currentLesson = currentIndex >= 0 ? lessons[currentIndex] : lessons[0];
+  const nextLesson = currentIndex >= 0 ? lessons[currentIndex + 1] : undefined;
+
+  if (!course || !currentLesson) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-16">
+        <div>
+          <Link
+            href="/student/courses"
+            className="inline-flex items-center gap-1.5 text-xs text-[#8FA69B] hover:text-[#F0FDF4] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Courses</span>
+          </Link>
+        </div>
+        <div className="p-12 rounded-3xl bg-[#0A1913] border border-[#143326] text-center">
+          <BookOpen className="w-12 h-12 text-[#143326] mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-[#F0FDF4]">Lesson not found</h2>
+          <p className="text-sm text-[#8FA69B] mt-2">No lesson is available at this link.</p>
+        </div>
+      </div>
+    );
+  }
 
   const isCompleted = completedLessons.includes(currentLesson.id);
 

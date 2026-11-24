@@ -31,7 +31,7 @@ export default function StudentJobsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [remoteOnly, setRemoteOnly] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(INITIAL_JOBS[0]);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(INITIAL_JOBS[0] || null);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState(
     "I am an UnlockED candidate with verified project proof in Go, Kubernetes, and PostgreSQL. I would love to bring my production discipline to your engineering team."
@@ -126,7 +126,14 @@ export default function StudentJobsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left list (5 cols) */}
             <div className="lg:col-span-5 space-y-3">
-              {filteredJobs.map((job) => {
+              {filteredJobs.length === 0 ? (
+                <div className="p-8 rounded-2xl bg-[#0A1913] border border-[#143326] text-center">
+                  <Briefcase className="w-10 h-10 text-[#143326] mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-[#F0FDF4]">No job openings found</p>
+                  <p className="text-xs text-[#8FA69B] mt-1">Check back soon for hiring partner listings.</p>
+                </div>
+              ) : (
+                filteredJobs.map((job) => {
                 const isSelected = selectedJob?.id === job.id;
                 const isSaved = savedJobIds.includes(job.id);
                 const hasApplied = appliedJobs.some((a) => a.jobId === job.id);
@@ -204,7 +211,7 @@ export default function StudentJobsPage() {
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
 
             {/* Right Selected Job Detail (7 cols) */}

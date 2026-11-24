@@ -54,51 +54,59 @@ export default function AssessmentsHubPage() {
       {/* Benchmark Catalog */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-[#F5F3FF]">Available Technical Benchmarks</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {INITIAL_ASSESSMENTS.map((assessment) => (
-            <Card
-              key={assessment.id}
-              hoverEffect
-              className="p-6 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant="default">Engineering Benchmark</Badge>
-                  <span className="text-xs font-mono text-[#94A3B8] flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {assessment.time_limit_minutes} Mins
-                  </span>
+        {INITIAL_ASSESSMENTS.length === 0 ? (
+          <div className="py-16 text-center rounded-2xl bg-[#0A1913] border border-[#143326] p-8">
+            <Award className="w-12 h-12 text-[#143326] mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-[#F0FDF4]">No benchmarks available yet</h3>
+            <p className="text-sm text-[#8FA69B] mt-1">Skill evaluations will appear here as curriculum tracks are published.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {INITIAL_ASSESSMENTS.map((assessment) => (
+              <Card
+                key={assessment.id}
+                hoverEffect
+                className="p-6 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge variant="default">Engineering Benchmark</Badge>
+                    <span className="text-xs font-mono text-[#94A3B8] flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {assessment.time_limit_minutes} Mins
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-bold text-[#F5F3FF]">
+                    {assessment.title}
+                  </h3>
+                  <p className="text-xs text-[#94A3B8] mt-2 leading-relaxed">
+                    {assessment.description}
+                  </p>
+
+                  <div className="mt-4 flex items-center gap-4 text-xs text-[#94A3B8]">
+                    <span>{assessment.total_questions} Questions</span>
+                    <span>·</span>
+                    <span className="text-[#22C55E]">
+                      Passing Threshold: {assessment.passing_score}%
+                    </span>
+                  </div>
                 </div>
 
-                <h3 className="text-base font-bold text-[#F5F3FF]">
-                  {assessment.title}
-                </h3>
-                <p className="text-xs text-[#94A3B8] mt-2 leading-relaxed">
-                  {assessment.description}
-                </p>
-
-                <div className="mt-4 flex items-center gap-4 text-xs text-[#94A3B8]">
-                  <span>{assessment.total_questions} Questions</span>
-                  <span>·</span>
-                  <span className="text-[#22C55E]">
-                    Passing Threshold: {assessment.passing_score}%
+                <div className="mt-6 pt-4 border-t border-[#232336] flex items-center justify-between">
+                  <span className="text-[11px] text-[#64748B]">
+                    Calculated server-side
                   </span>
+                  <Link href={`/student/assessments/${assessment.id}`}>
+                    <Button size="sm" variant="gradient" className="gap-1.5 text-xs">
+                      Start Assessment <ArrowRight className="w-3.5 h-3.5" />
+                    </Button>
+                  </Link>
                 </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-[#232336] flex items-center justify-between">
-                <span className="text-[11px] text-[#64748B]">
-                  Calculated server-side
-                </span>
-                <Link href={`/student/assessments/${assessment.id}`}>
-                  <Button size="sm" variant="gradient" className="gap-1.5 text-xs">
-                    Start Assessment <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                </Link>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Attempt History */}

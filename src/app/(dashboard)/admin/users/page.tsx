@@ -20,44 +20,15 @@ import { Badge } from "@/components/ui/badge";
 import { UserRole } from "@/types";
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState([
-    {
-      id: "u-1",
-      name: "Alex Chen",
-      email: "alex.chen@unlocked.edu",
-      role: "student" as UserRole,
-      status: "active",
-      joinedAt: "2024-07-15",
-      readiness: "88/100",
-    },
-    {
-      id: "u-2",
-      name: "David Vance",
-      email: "david.vance@finscale.example.com",
-      role: "recruiter" as UserRole,
-      status: "active",
-      joinedAt: "2024-08-01",
-      readiness: "Partner Verified",
-    },
-    {
-      id: "u-3",
-      name: "Camila Ortiz",
-      email: "camila.ortiz@cloudflare.example.com",
-      role: "student" as UserRole,
-      status: "active",
-      joinedAt: "2024-06-10",
-      readiness: "94/100",
-    },
-    {
-      id: "u-4",
-      name: "Admin Moderator",
-      email: "admin@unlocked.edu",
-      role: "admin" as UserRole,
-      status: "active",
-      joinedAt: "2024-01-01",
-      readiness: "Root Security",
-    },
-  ]);
+  const [users, setUsers] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    role: UserRole;
+    status: string;
+    joinedAt: string;
+    readiness: string;
+  }[]>([]);
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -135,8 +106,15 @@ export default function AdminUsersPage() {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#232336] text-[#E4E1EC]">
-              {filteredUsers.map((u) => (
+            <tbody className="divide-y divide-[#143326] text-[#E6F4EA]">
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-12 text-center text-[#8FA69B]">
+                    No registered accounts found.
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((u) => (
                 <tr key={u.id} className="hover:bg-[#1A1A26] transition-colors">
                   <td className="p-4">
                     <p className="font-bold text-[#F5F3FF]">{u.name}</p>
@@ -174,7 +152,7 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

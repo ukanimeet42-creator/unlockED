@@ -29,11 +29,11 @@ export default function AssessmentTakingPage({
   const { id } = use(params);
   const { recordAssessmentAttempt } = useAuth();
 
-  const assessment = INITIAL_ASSESSMENTS.find((a) => a.id === id) || INITIAL_ASSESSMENTS[0];
+  const assessment = INITIAL_ASSESSMENTS.find((a) => a.id === id);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
-  const [timeLeftSeconds, setTimeLeftSeconds] = useState(assessment.time_limit_minutes * 60);
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState((assessment?.time_limit_minutes || 15) * 60);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{
     score: number;
@@ -44,6 +44,27 @@ export default function AssessmentTakingPage({
     verifiedHash: string | null;
     message: string;
   } | null>(null);
+
+  if (!assessment) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div>
+          <Link
+            href="/student/assessments"
+            className="inline-flex items-center gap-1.5 text-xs text-[#8FA69B] hover:text-[#F0FDF4] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Skill Benchmark</span>
+          </Link>
+        </div>
+        <div className="p-12 rounded-3xl bg-[#0A1913] border border-[#143326] text-center">
+          <Award className="w-12 h-12 text-[#143326] mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-[#F0FDF4]">Assessment not found</h2>
+          <p className="text-sm text-[#8FA69B] mt-2">No assessment is currently available at this link.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Active countdown
   useEffect(() => {
