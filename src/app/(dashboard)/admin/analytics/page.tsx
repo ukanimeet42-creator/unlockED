@@ -1,15 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, Users, Award, Briefcase, Sparkles } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, TrendingUp, Award } from "lucide-react";
+import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -20,49 +17,129 @@ import {
   Cell,
 } from "recharts";
 
+interface OverviewResponse {
+  kpis: {
+    totalUsers: number;
+    totalEnrollments: number;
+    benchmarksTaken: number;
+    benchmarkPassRate: number;
+    avgAssessmentScore: number;
+    activeJobs: number;
+    totalApplications: number;
+  };
+  activityTimeline: Array<{
+    date: string;
+    users: number;
+    enrollments: number;
+    applications: number;
+  }>;
+  domainDistribution: Array<{ name: string; value: number; color: string }>;
+}
+
 export default function AdminAnalyticsPage() {
-  const cohortGrowth: { cohort: string; enrolled: number; graduated: number; placed: number }[] = [];
-  const domainDistribution: { name: string; value: number; color: string }[] = [];
+  const [daysRange, setDaysRange] = useState(30);
+  const [data, setData] = useState<OverviewResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/admin/overview?days=${daysRange}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (active && json) setData(json);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [daysRange]);
+
+  const timeline = data?.activityTimeline || [];
+  const domains = data?.domainDistribution || [];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-20">
+    <div className="space-y-8 pb-20">
       <Link
         href="/admin"
-        className="inline-flex items-center gap-1.5 text-xs text-[#8FA69B] hover:text-[#F0FDF4] transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs text-[#8FA69B] hover:text-[#F0FDF4]"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Console
       </Link>
 
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#F0FDF4]">
-            Platform Analytics & Placement Telemetry
-          </h1>
-          <Badge variant="emerald" dot>
-            Real-Time
-          </Badge>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#F0FDF4]">
+              Platform Analytics
+            </h1>
+            <Badge variant="emerald" dot>Database Telemetry</Badge>
+          </div>
+          <p className="text-xs sm:text-sm text-[#8FA69B] mt-1">
+            Live database-backed registrations, enrollments, benchmark pass rates, and applications.
+          </p>
         </div>
-        <p className="text-xs sm:text-sm text-[#8FA69B] mt-1">
-          Deep cohort performance, placement velocity, and benchmark distribution across platform learners.
-        </p>
+
+        <select
+          value={daysRange}
+          onChange={(e) => {
+            setLoading(true);
+            setDaysRange(Number(e.target.value));
+          }}
+          className="h-9 rounded-lg border border-[#143326] bg-[#0A1913] px-3 text-xs text-[#F0FDF4]"
+        >
+          <option value={7}>Last 7 Days</option>
+          <option value={30}>Last 30 Days</option>
+          <option value={90}>Last 90 Days</option>
+          <option value={365}>Last 365 Days</option>
+        </select>
       </div>
 
+      {data && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <Card className="p-4">
+            <span className="text-[#8FA69B]">Course Enrollments</span>
+            <p className="text-2xl font-bold text-[#F0FDF4] mt-1">{data.kpis.totalEnrollments}</p>
+          </Card>
+          <Card className="p-4">
+            <span className="text-[#8FA69B]">Avg Benchmark Score</span>
+            <p className="text-2xl font-bold text-[#00DC82] mt-1">
+              {data.kpis.benchmarksTaken > 0 ? `${data.kpis.avgAssessmentScore}%` : "—"}
+            </p>
+          </Card>
+          <Card className="p-4">
+            <span className="text-[#8FA69B]">Benchmark Pass Rate</span>
+            <p className="text-2xl font-bold text-[#22D3EE] mt-1">
+              {data.kpis.benchmarksTaken > 0 ? `${data.kpis.benchmarkPassRate}%` : "—"}
+            </p>
+          </Card>
+          <Card className="p-4">
+            <span className="text-[#8FA69B]">Active Job Requisitions</span>
+            <p className="text-2xl font-bold text-[#F0FDF4] mt-1">{data.kpis.activeJobs}</p>
+          </Card>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cohort Graduation & Placement */}
-        <Card className="lg:col-span-2 p-6 bg-[#0A1913] border-[#143326] space-y-4">
-          <CardTitle>Cohort Completion & Placement Conversion</CardTitle>
-          {cohortGrowth.length === 0 ? (
-            <div className="h-72 w-full flex flex-col items-center justify-center text-center">
+        <Card className="lg:col-span-2 p-6 space-y-4">
+          <CardTitle>Registration, Enrollment & Application Activity</CardTitle>
+          {loading ? (
+            <div className="h-72 rounded-xl bg-[#07130E] animate-pulse" />
+          ) : timeline.length === 0 ? (
+            <div className="h-72 flex flex-col items-center justify-center text-center">
               <TrendingUp className="w-10 h-10 text-[#143326] mb-3" />
-              <p className="text-sm font-semibold text-[#F0FDF4]">No cohort data recorded yet</p>
-              <p className="text-xs text-[#8FA69B] mt-1">Cohort metrics will populate as classes complete curricula.</p>
+              <p className="text-sm font-semibold text-[#F0FDF4]">No activity events in selected window</p>
+              <p className="text-xs text-[#8FA69B] mt-1">
+                Real database events will chart here as learners and recruiters use the platform.
+              </p>
             </div>
           ) : (
             <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cohortGrowth}>
-                  <XAxis dataKey="cohort" stroke="#64748B" fontSize={11} />
-                  <YAxis stroke="#64748B" fontSize={11} />
+                <BarChart data={timeline}>
+                  <XAxis dataKey="date" stroke="#5D7A6E" fontSize={11} />
+                  <YAxis allowDecimals={false} stroke="#5D7A6E" fontSize={11} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "#07130E",
@@ -72,23 +149,23 @@ export default function AdminAnalyticsPage() {
                       fontSize: "12px",
                     }}
                   />
-                  <Bar dataKey="enrolled" fill="#143326" name="Enrolled" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="graduated" fill="#10B981" name="Graduated" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="placed" fill="#00DC82" name="Direct Hires" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="users" fill="#22D3EE" name="New Users" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="enrollments" fill="#10B981" name="Enrollments" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="applications" fill="#00DC82" name="Applications" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </Card>
 
-        {/* Domain Distribution Pie */}
-        <Card className="p-6 bg-[#0A1913] border-[#143326] space-y-4 flex flex-col justify-between">
-          <CardTitle>Specialization Domain Distribution</CardTitle>
-          {domainDistribution.length === 0 ? (
-            <div className="h-56 w-full flex flex-col items-center justify-center text-center">
+        <Card className="p-6 space-y-4 flex flex-col justify-between">
+          <CardTitle>Enrollment by Track Category</CardTitle>
+          {loading ? (
+            <div className="h-56 rounded-xl bg-[#07130E] animate-pulse" />
+          ) : domains.length === 0 ? (
+            <div className="h-56 flex flex-col items-center justify-center text-center">
               <Award className="w-10 h-10 text-[#143326] mb-3" />
-              <p className="text-sm font-semibold text-[#F0FDF4]">No domain telemetry</p>
-              <p className="text-xs text-[#8FA69B] mt-1">Domain breakdown will display as assessments are passed.</p>
+              <p className="text-sm font-semibold text-[#F0FDF4]">No enrollments recorded yet</p>
             </div>
           ) : (
             <>
@@ -96,15 +173,15 @@ export default function AdminAnalyticsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={domainDistribution}
+                      data={domains}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
+                      innerRadius={55}
+                      outerRadius={78}
+                      paddingAngle={4}
                       dataKey="value"
                     >
-                      {domainDistribution.map((entry, index) => (
+                      {domains.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -113,13 +190,13 @@ export default function AdminAnalyticsPage() {
                 </ResponsiveContainer>
               </div>
               <div className="space-y-1 text-xs">
-                {domainDistribution.map((d, i) => (
+                {domains.map((d, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-[#8FA69B]">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
                       {d.name}
                     </span>
-                    <span className="font-mono font-bold text-[#F0FDF4]">{d.value}%</span>
+                    <span className="font-mono font-bold text-[#F0FDF4]">{d.value}</span>
                   </div>
                 ))}
               </div>

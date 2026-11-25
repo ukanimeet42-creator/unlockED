@@ -7,12 +7,13 @@ export default function StudentLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex-1 flex min-h-[calc(100vh-4rem)] bg-[#0B0B12]">
-      <Suspense fallback={<div className="w-64 border-r border-[#232336] bg-[#0E0E15]" />}>
+    <div className="flex-1 flex flex-col md:flex-row min-h-[calc(100vh-4rem)] bg-[#06100C] relative overflow-x-clip">
+      <div className="pointer-events-none fixed inset-x-0 top-16 h-64 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.12),transparent_65%)] z-0" />
+      <Suspense fallback={<div className="hidden md:block w-64 border-r border-[#143326] bg-[#07130E]" />}>
         <Sidebar />
       </Suspense>
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl">
-        <Suspense fallback={<div className="text-xs text-[#94A3B8] p-8">Loading workspace...</div>}>
+      <main className="relative z-10 flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full">
+        <Suspense fallback={<div className="text-xs text-[#8FA69B] p-8">Loading workspace...</div>}>
           {children}
         </Suspense>
       </main>

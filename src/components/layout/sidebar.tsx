@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   GraduationCap,
+  Bell,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -39,6 +40,7 @@ export function Sidebar() {
     { href: "/student/resume", label: "AI Resume Builder", icon: FileText },
     { href: "/student/jobs", label: "Jobs & Internships", icon: Briefcase },
     { href: "/student/certificates", label: "Certificates", icon: BadgeCheck },
+    { href: "/student/notifications", label: "Notifications", icon: Bell },
     { href: "/student/settings", label: "Settings", icon: Settings },
   ];
 
@@ -59,54 +61,90 @@ export function Sidebar() {
     { href: "/admin/jobs", label: "Job Moderation", icon: Briefcase },
     { href: "/admin/recruiters", label: "Recruiter Verification", icon: ShieldAlert },
     { href: "/admin/projects", label: "Project Moderation", icon: FolderGit2 },
+    { href: "/admin/notifications", label: "System Events", icon: Bell },
   ];
 
+  const activeRole =
+    role ||
+    (pathname.startsWith("/admin")
+      ? "admin"
+      : pathname.startsWith("/recruiter")
+      ? "recruiter"
+      : "student");
+
   const links =
-    role === "admin"
+    activeRole === "admin"
       ? adminLinks
-      : role === "recruiter"
+      : activeRole === "recruiter"
       ? recruiterLinks
       : studentLinks;
 
-  return (
-    <aside
-      className={`sticky top-16 h-[calc(100vh-4rem)] border-r border-slate-200 dark:border-[#232336] bg-slate-50 dark:bg-[#0E0E15] transition-all duration-200 flex flex-col justify-between select-none z-30 ${
-        collapsed ? "w-16" : "w-64"
-      }`}
-    >
-      <div className="p-3 space-y-6 overflow-y-auto">
-        {/* Role banner */}
-        {!collapsed && (
-          <div className="p-3 rounded-xl bg-[#151520] border border-[#232336] flex items-center gap-3">
-            <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                role === "student"
-                  ? "bg-[#8B5CF6]/20 text-[#D0BCFF]"
-                  : role === "recruiter"
-                  ? "bg-[#6366F1]/20 text-[#C0C1FF]"
-                  : "bg-[#22C55E]/20 text-[#4AE176]"
-              }`}
-            >
-              {role === "student" ? (
-                <GraduationCap className="w-4 h-4" />
-              ) : role === "recruiter" ? (
-                <Building2 className="w-4 h-4" />
-              ) : (
-                <ShieldAlert className="w-4 h-4" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-[#94A3B8]">
-                Current Workspace
-              </span>
-              <p className="text-xs font-semibold text-[#F5F3FF] capitalize truncate">
-                {role} Portal
-              </p>
-            </div>
-          </div>
-        )}
+  const roleAccent =
+    activeRole === "admin"
+      ? { label: "Governance Console", badge: "ADMIN", iconColor: "text-[#F59E0B] bg-[#F59E0B]/15 border-[#F59E0B]/30" }
+      : activeRole === "recruiter"
+      ? { label: "Talent Hub", badge: "RECRUITER", iconColor: "text-[#22D3EE] bg-[#22D3EE]/15 border-[#22D3EE]/30" }
+      : { label: "Learning Universe", badge: "STUDENT", iconColor: "text-[#00DC82] bg-[#10B981]/15 border-[#16382C]" };
 
-        {/* Navigation items */}
+  return (
+    <>
+      {/* Mobile / Tablet Quick Workspace Nav */}
+      <div className="md:hidden sticky top-16 z-30 border-b border-[#143326] bg-[#07130E]/95 backdrop-blur-md px-3 py-2.5 overflow-x-auto">
+        <div className="flex items-center gap-1.5 min-w-max">
+          {links.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/student" &&
+                item.href !== "/recruiter" &&
+                item.href !== "/admin" &&
+                pathname.startsWith(item.href));
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                  isActive
+                    ? "bg-[#0F271D] text-[#00DC82] border border-[#16382C]"
+                    : "text-[#8FA69B] hover:text-[#F0FDF4] bg-[#0A1913]/60 border border-transparent"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      <aside
+        className={`hidden md:flex sticky top-16 h-[calc(100vh-4rem)] border-r border-[#143326] bg-[#07130E] transition-all duration-200 flex-col justify-between select-none z-30 shrink-0 ${
+          collapsed ? "w-16" : "w-64"
+        }`}
+      >
+        <div className="p-3 space-y-5 overflow-y-auto">
+          {!collapsed && (
+            <div className="p-3 rounded-xl bg-[#0A1913] border border-[#143326] flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${roleAccent.iconColor}`}>
+                {activeRole === "student" ? (
+                  <GraduationCap className="w-4 h-4" />
+                ) : activeRole === "recruiter" ? (
+                  <Building2 className="w-4 h-4" />
+                ) : (
+                  <ShieldAlert className="w-4 h-4" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-[#5D7A6E]">
+                  {roleAccent.badge}
+                </span>
+                <p className="text-xs font-semibold text-[#F0FDF4] truncate">
+                  {roleAccent.label}
+                </p>
+              </div>
+            </div>
+          )}
+
         <nav className="space-y-1">
           {links.map((item) => {
             const isActive =
@@ -125,24 +163,22 @@ export function Sidebar() {
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
                   isActive
-                    ? "bg-[#1F1F26] text-[#F5F3FF] border border-[#2A2931] shadow-sm"
-                    : "text-[#94A3B8] hover:text-[#F5F3FF] hover:bg-[#151520]"
+                    ? "bg-[#0F271D] text-[#00DC82] border border-[#16382C] shadow-sm"
+                    : "text-[#8FA69B] hover:text-[#F0FDF4] hover:bg-[#0A1913]"
                 } ${collapsed ? "justify-center px-0" : ""}`}
               >
                 <Icon
                   className={`w-4 h-4 shrink-0 ${
                     isActive
-                      ? "text-[#8B5CF6]"
+                      ? "text-[#00DC82]"
                       : item.highlight
-                      ? "text-[#A078FF]"
-                      : "text-[#94A3B8]"
+                      ? "text-[#22D3EE]"
+                      : "text-[#8FA69B]"
                   }`}
                 />
-                {!collapsed && (
-                  <span className="truncate">{item.label}</span>
-                )}
+                {!collapsed && <span className="truncate">{item.label}</span>}
                 {!collapsed && item.highlight && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#8B5CF6] animate-pulse shrink-0" />
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#22D3EE] animate-pulse shrink-0" />
                 )}
               </Link>
             );
@@ -150,11 +186,10 @@ export function Sidebar() {
         </nav>
       </div>
 
-      {/* Collapse button at bottom */}
-      <div className="p-3 border-t border-[#232336]">
+      <div className="p-3 border-t border-[#143326]">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={`flex items-center gap-2 w-full py-2 px-3 rounded-lg text-xs text-[#94A3B8] hover:text-[#F5F3FF] hover:bg-[#151520] transition-colors ${
+          className={`flex items-center gap-2 w-full py-2 px-3 rounded-lg text-xs text-[#8FA69B] hover:text-[#F0FDF4] hover:bg-[#0A1913] transition-colors cursor-pointer ${
             collapsed ? "justify-center px-0" : ""
           }`}
         >
@@ -169,5 +204,6 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

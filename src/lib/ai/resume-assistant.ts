@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { generateAiContent, sanitizeAiInput } from "./gemini";
+import { AiServiceUnavailableError, generateAiContent, sanitizeAiInput } from "./gemini";
 
 export const ResumeImprovementSchema = z.object({
   originalText: z.string(),
@@ -22,49 +22,44 @@ export async function improveResumeContent({
   textToImprove: string;
   type?: "summary" | "bullet_point" | "experience";
 }): Promise<ResumeImprovement> {
-  const safeRole = sanitizeAiInput(targetRole);
+  const safeRole = sanitizeAiInput(targetRole) || "Software Engineer";
   const safeText = sanitizeAiInput(textToImprove);
 
+  if (!safeText) {
+    throw new AiServiceUnavailableError("Please provide existing resume text or summary to enhance.");
+  }
+
   const prompt = `
-Analyze and enhance this candidate's resume ${type} for the role of ${safeRole || "Software Engineer"}:
+Analyze and improve this candidate's resume ${type} targeting ${safeRole}:
 Original Text: "${safeText}"
 
-CRITICAL RULES:
-1. Never invent fake degrees, fake employers, or fake years of experience.
-2. Transform passive verbs into crisp engineering action verbs (e.g. "Engineered", "Orchestrated", "Calibrated", "Architected").
-3. Quantify impact (latency reductions, uptime, test coverage, efficiency gains) while keeping claims plausible.
-4. Output strictly JSON.
-
-Schema:
+STRICT RULES:
+1. Never invent degrees, employers, dates, or fake metrics not implied by the original text (use placeholders like "[X%]" where real numbers aren't known).
+2. Strengthen phrasing using crisp technical action verbs and clear architectural context.
+3. Output strictly JSON matching:
 {
-  "originalText": "${safeText}",
-  "improvedText": "High-impact, active-voice version",
-  "actionVerbsAdded": ["Orchestrated", "Accelerated"],
+  "originalText": "${safeText.replace(/"/g, '\\"')}",
+  "improvedText": "Refined version",
+  "actionVerbsAdded": ["Engineered", "Architected"],
   "impactScoreBefore": 45,
-  "impactScoreAfter": 92,
-  "reasoning": "Replaced passive phrasing with tangible metrics and engineering terminology.",
-  "missingSectionsOrKeywords": ["CI/CD Pipeline", "Latency SLA"]
+  "impactScoreAfter": 85,
+  "reasoning": "Why this phrasing improves clarity for engineering reviewers",
+  "missingSectionsOrKeywords": ["Suggested quantifiable outcome", "Relevant keyword"]
 }
 `;
 
-  try {
-    const rawJson = await generateAiContent({
-      systemInstruction: "You are the UnlockED Senior Technical Recruiter & Resume Specialist. Polish technical resumes to stand out to engineering directors. Never fabricate credentials. Return pure JSON only.",
-      prompt,
-      responseMimeType: "application/json",
-    });
+  const rawJson = await generateAiContent({
+    systemInstruction:
+      "You are the UnlockED Senior Technical Resume Specialist. Refine wording for clarity and impact without fabricating unverified claims or fake metrics. Return pure JSON only.",
+    prompt,
+    responseMimeType: "application/json",
+  });
 
+  try {
     const parsed = JSON.parse(rawJson);
     return ResumeImprovementSchema.parse(parsed);
-  } catch {
-    return {
-      originalText: safeText || "Helped build a backend server and worked on database queries.",
-      improvedText: `Architected concurrent Go microservice endpoints and optimized PostgreSQL composite indexes, reducing p95 API response latency by 42% under load.`,
-      actionVerbsAdded: ["Architected", "Optimized", "Engineered"],
-      impactScoreBefore: 42,
-      impactScoreAfter: 94,
-      reasoning: "Replaced vague descriptors ('helped build', 'worked on') with quantifiable architectural achievements, specifying database indexing and latency SLAs.",
-      missingSectionsOrKeywords: ["Concurrency metrics", "Database connection pooling", "Prometheus alerts"],
-    };
+  } catch (err) {
+    if (err instanceof AiServiceUnavailableError) throw err;
+    throw new AiServiceUnavailableError("Failed to parse resume enhancement from AI model.");
   }
 }

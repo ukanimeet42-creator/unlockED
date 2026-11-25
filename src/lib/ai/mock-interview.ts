@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { generateAiContent, sanitizeAiInput } from "./gemini";
+import { AiServiceUnavailableError, generateAiContent, sanitizeAiInput } from "./gemini";
 
 export const InterviewQuestionSchema = z.object({
   id: z.string(),
@@ -30,56 +30,36 @@ export async function generateInterviewQuestions({
   experienceLevel?: "entry" | "mid" | "senior";
   count?: number;
 }): Promise<InterviewQuestion[]> {
-  const safeRole = sanitizeAiInput(targetRole);
+  const safeRole = sanitizeAiInput(targetRole) || "Full-Stack Software Engineer";
 
   const prompt = `
-Generate ${count} realistic, challenging technical interview questions for a ${experienceLevel} ${safeRole}.
-Focus on architectural trade-offs, debugging scenarios, and system resilience.
-Return JSON array matching:
+Generate ${count} realistic technical interview questions for a ${experienceLevel}-level ${safeRole}.
+Focus on practical architecture, debugging scenarios, trade-offs, and system resilience relevant to ${safeRole}.
+Return a pure JSON array matching:
 [
   {
     "id": "q1",
     "question": "Question text...",
-    "topic": "Concurrency / Architecture",
+    "topic": "System Design / Debugging",
     "difficulty": "${experienceLevel}",
     "expectedKeyConcepts": ["Concept 1", "Concept 2"]
   }
 ]
 `;
 
-  try {
-    const rawJson = await generateAiContent({
-      systemInstruction: "You are a Principal Engineering Director conducting an interview. Ask deep, realistic questions testing real architectural and troubleshooting ability. Return pure JSON array only.",
-      prompt,
-      responseMimeType: "application/json",
-    });
+  const rawJson = await generateAiContent({
+    systemInstruction:
+      "You are a Principal Engineering Director conducting a live technical interview. Ask practical, role-calibrated questions. Return pure JSON array only.",
+    prompt,
+    responseMimeType: "application/json",
+  });
 
+  try {
     const parsed = JSON.parse(rawJson);
     return z.array(InterviewQuestionSchema).parse(parsed);
-  } catch {
-    return [
-      {
-        id: "iq-1",
-        question: "Suppose your Go HTTP microservice experiences a memory spike during traffic bursts that triggers an OOM kill. How would you diagnose whether it's a goroutine leak or unbounded slice allocations?",
-        topic: "Go Concurrency & Memory Profiling",
-        difficulty: experienceLevel,
-        expectedKeyConcepts: ["pprof goroutine dump", "Unbounded channel buffers", "Heap allocation profiling", "Worker pool limits"],
-      },
-      {
-        id: "iq-2",
-        question: "When deploying a 3-replica Kubernetes service, how do readiness probes and liveness probes differ in how the kubelet handles traffic and pod restarts?",
-        topic: "Kubernetes Resilience",
-        difficulty: experienceLevel,
-        expectedKeyConcepts: ["Readiness removes pod from Service endpoints", "Liveness triggers container restart", "Warmup grace periods"],
-      },
-      {
-        id: "iq-3",
-        question: "Explain the trade-offs between optimistic locking (e.g. version column) versus pessimistic locking (SELECT FOR UPDATE) in high-contention PostgreSQL databases.",
-        topic: "Database Concurrency",
-        difficulty: experienceLevel,
-        expectedKeyConcepts: ["Deadlock risks with pessimistic locks", "Retry overhead in optimistic locking", "Row-level lock contention"],
-      },
-    ];
+  } catch (err) {
+    if (err instanceof AiServiceUnavailableError) throw err;
+    throw new AiServiceUnavailableError("Failed to parse interview questions from AI model.");
   }
 }
 
@@ -94,58 +74,45 @@ export async function evaluateInterviewAnswer({
   expectedConcepts: string[];
   candidateAnswer: string;
 }): Promise<InterviewEvaluation> {
+  const safeRole = sanitizeAiInput(targetRole) || "Software Engineer";
+  const safeQuestion = sanitizeAiInput(question);
   const safeAnswer = sanitizeAiInput(candidateAnswer);
 
   const prompt = `
-Evaluate this candidate's technical interview answer:
-Target Role: ${targetRole}
-Interview Question: "${question}"
+Evaluate this candidate's technical interview answer strictly and objectively:
+Target Role: ${safeRole}
+Interview Question: "${safeQuestion}"
 Expected Key Concepts: ${expectedConcepts.join(", ")}
 Candidate Answer: "${safeAnswer}"
 
-Grade objectively on a 0-100 scale:
-- 85-100: Flawless technical precision, mentions trade-offs, demonstrates hands-on experience
-- 70-84: Solid conceptual grasp, minor omissions
-- <70: Missing core concepts or technically flawed
+Grade on a 0-100 scale based on actual technical accuracy in the answer above (score low if off-topic, incomplete, or superficial):
+- 85-100: Accurate technical depth, mentions trade-offs & concrete details
+- 70-84: Sound core concept, minor omissions
+- <70: Incomplete, inaccurate, or misses core concepts
 
 Return pure JSON matching:
 {
-  "score": 88,
-  "strengths": ["Clear explanation of pprof", "Identified channel deadlock risk"],
-  "areasForImprovement": ["Could have mentioned connection pool limits"],
-  "detailedFeedback": "Constructive 3-4 sentence review...",
-  "idealAnswerSample": "Concise model response illustrating how a senior engineer would answer...",
+  "score": 78,
+  "strengths": ["..."],
+  "areasForImprovement": ["..."],
+  "detailedFeedback": "Objective 3-4 sentence evaluation...",
+  "idealAnswerSample": "Concise model answer...",
   "passedCriteria": true
 }
 `;
 
-  try {
-    const rawJson = await generateAiContent({
-      systemInstruction: "You are the UnlockED Technical Interview Evaluator. Provide rigorous, objective, and constructive evaluations with no fluff. Return pure JSON only.",
-      prompt,
-      responseMimeType: "application/json",
-    });
+  const rawJson = await generateAiContent({
+    systemInstruction:
+      "You are the UnlockED Technical Interview Evaluator. Provide honest, rigorous feedback calibrated strictly to the candidate's submitted text. Do not flatter inaccurate answers. Return pure JSON only.",
+    prompt,
+    responseMimeType: "application/json",
+  });
 
+  try {
     const parsed = JSON.parse(rawJson);
     return InterviewEvaluationSchema.parse(parsed);
-  } catch {
-    const wordCount = safeAnswer.split(/\s+/).length;
-    const score = Math.min(92, Math.max(55, Math.round(wordCount * 1.5) + 35));
-
-    return {
-      score,
-      strengths: [
-        "Structured logical breakdown of the diagnostic sequence",
-        "Correctly cited telemetry and profiling tools",
-        "Demonstrated clear understanding of failure isolation",
-      ],
-      areasForImprovement: [
-        "Include specific command line flags or code examples (e.g., net/http/pprof endpoint setup)",
-        "Address edge cases such as network partition timeouts during high load",
-      ],
-      detailedFeedback: `Your response shows solid engineering intuition. You correctly articulated the difference between memory bloat and goroutine thread starvation. To reach the top tier, explicitly quantify your approach by citing how you would set up automated alerts in Grafana before an OOM occurs.`,
-      idealAnswerSample: `In this scenario, I would immediately inspect the pprof endpoint at /debug/pprof/goroutine?debug=2 to check for blocked goroutines waiting on unbuffered channels. Next, I'd review heap profile graphs with 'go tool pprof -alloc_space' to identify large in-flight byte slices. In Kubernetes, I'd verify container resource limits and ensure our worker pool limits concurrent tasks with a semaphore rather than spawning unbounded goroutines per incoming request.`,
-      passedCriteria: score >= 70,
-    };
+  } catch (err) {
+    if (err instanceof AiServiceUnavailableError) throw err;
+    throw new AiServiceUnavailableError("Failed to parse interview evaluation from AI model.");
   }
 }

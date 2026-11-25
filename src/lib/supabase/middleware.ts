@@ -2,43 +2,39 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { ROUTES, ROLE_ROUTES } from "@/lib/constants";
 
-// Routes that don't require authentication
 const publicRoutes = [
   "/",
-  "/about",
-  "/contact",
+  "/courses",
   "/login",
   "/register",
   "/forgot-password",
+  "/reset-password",
   "/verify-email",
   "/portfolio",
+  "/verify",
 ];
 
-// Check if a path matches any public route
 function isPublicRoute(path: string): boolean {
   return publicRoutes.some(
-    (route) => path === route || path.startsWith(route + "/")
+    (route) => path === route || (route !== "/" && path.startsWith(route + "/"))
   );
 }
 
-// Check if a path is an API route
 function isApiRoute(path: string): boolean {
   return path.startsWith("/api/");
 }
 
-// Check if a path is a static asset
 function isStaticAsset(path: string): boolean {
   return (
     path.startsWith("/_next/") ||
     path.startsWith("/favicon") ||
-    path.includes(".")
+    /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?)$/i.test(path)
   );
 }
 
 export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // Skip auth checks for static assets and API routes
   if (isStaticAsset(path) || isApiRoute(path)) {
     return NextResponse.next({ request });
   }
@@ -46,128 +42,130 @@ export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // If Supabase is unconfigured or has placeholder values (e.g. offline dev / demo mode),
-  // bypass SSR Supabase auth so the application runs seamlessly.
   if (
     !supabaseUrl ||
     !supabaseAnonKey ||
     !supabaseUrl.startsWith("http") ||
     supabaseUrl.includes("your_supabase_project_url")
   ) {
+    if (!isPublicRoute(path)) {
+      const url = request.nextUrl.clone();
+      url.pathname = ROUTES.LOGIN;
+      url.searchParams.set("error", "backend_unconfigured");
+      return NextResponse.redirect(url);
+    }
     return NextResponse.next({ request });
   }
 
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
-  // Fast-path: If user has no auth session cookie and is on a public route, skip remote check
-  const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-"));
+
+  // Skip remote auth verification for anonymous requests hitting public pages
   if (!hasAuthCookie && isPublicRoute(path)) {
     return supabaseResponse;
   }
 
-  // Check demo mode cookie
-  const demoRole = request.cookies.get("unlocked_demo_role")?.value;
-
-  // Refresh session
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // If user is not authenticated and trying to access protected route
+  // Protect all non-public routes (including /onboarding, /student*, /recruiter*, /admin*)
   if (!user && !isPublicRoute(path)) {
-    // If user is exploring in demo mode or has no active Supabase session yet,
-    // allow access to role workspaces without blocking them.
-    if (demoRole || !hasAuthCookie) {
-      return supabaseResponse;
-    }
-
     const url = request.nextUrl.clone();
     url.pathname = ROUTES.LOGIN;
     url.searchParams.set("redirectTo", path);
     return NextResponse.redirect(url);
   }
 
-  // If user is authenticated
   if (user) {
-    // Redirect from auth pages to dashboard
-    if (
+    // Enforce account suspension check
+    if (user.user_metadata?.account_status === "suspended") {
+      await supabase.auth.signOut();
+      if (path !== ROUTES.LOGIN) {
+        const url = request.nextUrl.clone();
+        url.pathname = ROUTES.LOGIN;
+        url.searchParams.set("error", "suspended");
+        return NextResponse.redirect(url);
+      }
+      return supabaseResponse;
+    }
+
+    const needsRoleRouting =
       path === ROUTES.LOGIN ||
-      path === ROUTES.REGISTER
-    ) {
-      // Fetch profile to determine role
+      path === ROUTES.REGISTER ||
+      path === ROUTES.ONBOARDING ||
+      path.startsWith("/student") ||
+      path.startsWith("/recruiter") ||
+      path.startsWith("/admin");
+
+    if (needsRoleRouting) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("role, onboarding_completed")
         .eq("id", user.id)
         .single();
 
-      if (profile && !profile.onboarding_completed) {
+      // If auth pages visited while already signed in
+      if (path === ROUTES.LOGIN || path === ROUTES.REGISTER) {
         const url = request.nextUrl.clone();
-        url.pathname = ROUTES.ONBOARDING;
+        if (!profile || !profile.onboarding_completed) {
+          url.pathname = ROUTES.ONBOARDING;
+        } else {
+          url.pathname = ROLE_ROUTES[profile.role] || ROUTES.STUDENT_DASHBOARD;
+        }
         return NextResponse.redirect(url);
       }
 
-      if (profile?.role) {
+      // Already onboarded users visiting /onboarding go to their workspace
+      if (path === ROUTES.ONBOARDING && profile?.onboarding_completed) {
         const url = request.nextUrl.clone();
         url.pathname = ROLE_ROUTES[profile.role] || ROUTES.STUDENT_DASHBOARD;
         return NextResponse.redirect(url);
       }
-    }
 
-    // Role-based route protection
-    if (path.startsWith("/student") || path.startsWith("/recruiter") || path.startsWith("/admin")) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, onboarding_completed")
-        .eq("id", user.id)
-        .single();
+      // Role-protected dashboards
+      if (
+        path.startsWith("/student") ||
+        path.startsWith("/recruiter") ||
+        path.startsWith("/admin")
+      ) {
+        if (!profile || !profile.onboarding_completed) {
+          const url = request.nextUrl.clone();
+          url.pathname = ROUTES.ONBOARDING;
+          return NextResponse.redirect(url);
+        }
 
-      if (!profile) {
-        const url = request.nextUrl.clone();
-        url.pathname = ROUTES.ONBOARDING;
-        return NextResponse.redirect(url);
-      }
+        const requiredRole = path.startsWith("/student")
+          ? "student"
+          : path.startsWith("/recruiter")
+          ? "recruiter"
+          : "admin";
 
-      if (!profile.onboarding_completed) {
-        const url = request.nextUrl.clone();
-        url.pathname = ROUTES.ONBOARDING;
-        return NextResponse.redirect(url);
-      }
-
-      // Check role matches route
-      const requiredRole = path.startsWith("/student")
-        ? "student"
-        : path.startsWith("/recruiter")
-        ? "recruiter"
-        : path.startsWith("/admin")
-        ? "admin"
-        : null;
-
-      if (requiredRole && profile.role !== requiredRole && profile.role !== "admin") {
-        const url = request.nextUrl.clone();
-        url.pathname = ROLE_ROUTES[profile.role] || "/";
-        return NextResponse.redirect(url);
+        if (profile.role !== requiredRole) {
+          const url = request.nextUrl.clone();
+          url.pathname = ROLE_ROUTES[profile.role] || ROUTES.HOME;
+          return NextResponse.redirect(url);
+        }
       }
     }
   }

@@ -1,4 +1,16 @@
 export type UserRole = "student" | "recruiter" | "admin";
+export type AccountStatus = "active" | "suspended";
+
+export interface NotificationPreferences {
+  email_updates: boolean;
+  job_alerts: boolean;
+  course_reminders: boolean;
+}
+
+export interface PrivacySettings {
+  public_portfolio: boolean;
+  show_email_to_recruiters: boolean;
+}
 
 export interface Profile {
   id: string;
@@ -6,6 +18,8 @@ export interface Profile {
   full_name: string;
   avatar_url: string | null;
   role: UserRole;
+  status?: AccountStatus;
+  suspended_at?: string | null;
   bio: string | null;
   phone: string | null;
   location: string | null;
@@ -13,8 +27,20 @@ export interface Profile {
   github_url: string | null;
   linkedin_url: string | null;
   onboarding_completed: boolean;
+  notification_preferences?: NotificationPreferences;
+  privacy_settings?: PrivacySettings;
   created_at: string;
   updated_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface Company {
@@ -47,8 +73,11 @@ export interface Course {
   created_at: string;
   updated_at: string;
   // Computed fields
+  slug?: string;
   lesson_count?: number;
   enrolled_count?: number;
+  prerequisites?: string[];
+  learning_outcomes?: string[];
 }
 
 export interface LessonQuizQuestion {
@@ -82,6 +111,7 @@ export interface LessonChallenge {
 
 export interface Lesson {
   id: string;
+  slug?: string;
   course_id: string;
   title: string;
   content: string;

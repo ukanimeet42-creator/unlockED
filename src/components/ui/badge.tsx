@@ -11,6 +11,8 @@ const badgeVariants = cva(
           "bg-[#10B981]/15 text-[#34D399] border border-[#10B981]/30",
         emerald:
           "bg-[#10B981]/15 text-[#00DC82] border border-[#10B981]/30",
+        cyan:
+          "bg-[#22D3EE]/15 text-[#22D3EE] border border-[#22D3EE]/30",
         amber:
           "bg-[#F59E0B]/15 text-[#FBBF24] border border-[#F59E0B]/30",
         indigo:
@@ -43,6 +45,7 @@ function Badge({ className, variant, dot = false, children, ...props }: BadgePro
           className={cn(
             "w-1.5 h-1.5 rounded-full shrink-0",
             variant === "emerald" && "bg-[#00DC82] animate-pulse",
+            variant === "cyan" && "bg-[#22D3EE]",
             variant === "amber" && "bg-[#F59E0B]",
             variant === "error" && "bg-[#EF4444]",
             (!variant || variant === "default") && "bg-[#10B981]"

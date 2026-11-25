@@ -1,21 +1,35 @@
 import { z } from "zod";
-import { generateAiContent, sanitizeAiInput } from "./gemini";
+import { AiServiceUnavailableError, generateAiContent, sanitizeAiInput } from "./gemini";
+
+const NormalizedStatusSchema = z.preprocess((v) => {
+  const s = String(v || "").toLowerCase().trim();
+  if (s.includes("match") && !s.includes("partial")) return "matched";
+  if (s.includes("partial")) return "partial";
+  return "missing";
+}, z.enum(["matched", "partial", "missing"]));
+
+const NormalizedImportanceSchema = z.preprocess((v) => {
+  const s = String(v || "").toLowerCase().trim();
+  if (s.includes("crit") || s.includes("high") || s.includes("req") || s.includes("must")) return "critical";
+  if (s.includes("opt") || s.includes("low") || s.includes("nice")) return "optional";
+  return "recommended";
+}, z.enum(["critical", "recommended", "optional"]));
 
 export const SkillComparisonSchema = z.object({
   skill: z.string(),
-  status: z.enum(["matched", "partial", "missing"]),
-  importance: z.enum(["critical", "recommended", "optional"]),
+  status: NormalizedStatusSchema,
+  importance: NormalizedImportanceSchema,
   recommendation: z.string(),
 });
 
 export const SkillGapAnalysisSchema = z.object({
   targetRole: z.string(),
-  coverageScore: z.number().min(0).max(100),
-  matchedSkills: z.array(z.string()),
-  missingSkills: z.array(z.string()),
-  skillBreakdown: z.array(SkillComparisonSchema),
-  estimatedWeeksToBridge: z.number(),
-  curriculumSuggestions: z.array(z.string()),
+  coverageScore: z.coerce.number().min(0).max(100),
+  matchedSkills: z.array(z.string()).default([]),
+  missingSkills: z.array(z.string()).default([]),
+  skillBreakdown: z.array(SkillComparisonSchema).default([]),
+  estimatedWeeksToBridge: z.coerce.number().default(4),
+  curriculumSuggestions: z.array(z.string()).default([]),
 });
 
 export type SkillGapAnalysis = z.infer<typeof SkillGapAnalysisSchema>;
@@ -29,88 +43,47 @@ export async function analyzeSkillGap({
   targetRole: string;
   jobRequirements: string[];
 }): Promise<SkillGapAnalysis> {
-  const safeTargetRole = sanitizeAiInput(targetRole);
+  const safeTargetRole = sanitizeAiInput(targetRole) || "Software Engineer";
   const safeSkills = candidateSkills.map((s) => sanitizeAiInput(s)).filter(Boolean);
   const safeReqs = jobRequirements.map((r) => sanitizeAiInput(r)).filter(Boolean);
 
   const prompt = `
-Compare candidate skills against target role requirements:
+Compare candidate skills objectively against target role requirements:
 Target Role: ${safeTargetRole}
-Candidate Skills: ${safeSkills.join(", ")}
-Job Requirements: ${safeReqs.join("; ")}
+Candidate Skills: ${safeSkills.length > 0 ? safeSkills.join(", ") : "None recorded yet"}
+Role Requirements: ${safeReqs.length > 0 ? safeReqs.join("; ") : "General engineering competencies for " + safeTargetRole}
 
 Return strictly JSON matching:
 {
-  "targetRole": "${safeTargetRole}",
-  "coverageScore": 78,
-  "matchedSkills": ["Skill 1", "Skill 2"],
-  "missingSkills": ["Missing Skill 1", "Missing Skill 2"],
+  "targetRole": "${safeTargetRole.replace(/"/g, '\\"')}",
+  "coverageScore": 65,
+  "matchedSkills": ["Skill 1"],
+  "missingSkills": ["Missing Skill 1"],
   "skillBreakdown": [
     {
-      "skill": "Go (Golang)",
+      "skill": "TypeScript",
       "status": "matched",
       "importance": "critical",
-      "recommendation": "Maintain proficiency through benchmark assessments."
+      "recommendation": "Actionable next step"
     }
   ],
   "estimatedWeeksToBridge": 6,
-  "curriculumSuggestions": ["Course module 1", "Project suggestion"]
+  "curriculumSuggestions": ["Course or module recommendation"]
 }
 `;
 
-  try {
-    const rawJson = await generateAiContent({
-      systemInstruction: "You are the UnlockED Skill Gap Diagnostics Engine. Compute objective, transparent skill match telemetry. Return pure JSON only.",
-      prompt,
-      responseMimeType: "application/json",
-    });
+  const rawJson = await generateAiContent({
+    systemInstruction:
+      "You are the UnlockED Skill Gap Diagnostics Engine. Compute transparent, unbiased skill-gap analysis from the provided skill list and role requirements. Return pure JSON only.",
+    prompt,
+    responseMimeType: "application/json",
+  });
 
+  try {
     const parsed = JSON.parse(rawJson);
     return SkillGapAnalysisSchema.parse(parsed);
-  } catch {
-    // Intelligent fallback
-    const matched = safeSkills.filter((s) =>
-      safeReqs.some((r) => r.toLowerCase().includes(s.toLowerCase()))
-    );
-    const score = Math.min(95, Math.max(35, Math.round((matched.length / Math.max(1, safeReqs.length)) * 100) + 20));
-
-    return {
-      targetRole: safeTargetRole || "Associate Cloud Infrastructure SRE",
-      coverageScore: score,
-      matchedSkills: matched.length > 0 ? matched : ["Go (Golang)", "Docker & CI/CD"],
-      missingSkills: ["Kubernetes Multi-Node Clustering", "Prometheus Alertmanager"],
-      skillBreakdown: [
-        {
-          skill: "Go (Golang)",
-          status: "matched",
-          importance: "critical",
-          recommendation: "Strong core language foundation; verified in Module 2.",
-        },
-        {
-          skill: "Docker & CI/CD",
-          status: "matched",
-          importance: "critical",
-          recommendation: "Build GitHub Actions test workflows with automated container pushes.",
-        },
-        {
-          skill: "Kubernetes Multi-Node Clustering",
-          status: "missing",
-          importance: "critical",
-          recommendation: "Complete Lesson 1 in DevOps & Site Reliability track.",
-        },
-        {
-          skill: "Prometheus Telemetry",
-          status: "partial",
-          importance: "recommended",
-          recommendation: "Build a custom Prometheus exporter and Grafana dashboard for project proof.",
-        },
-      ],
-      estimatedWeeksToBridge: 4,
-      curriculumSuggestions: [
-        "Full-Stack Cloud Architecture: Go & Serverless Systems",
-        "DevOps & SRE: Kubernetes, Terraform & CI/CD",
-        "Project: PulseGuard Rollback Daemon",
-      ],
-    };
+  } catch (err) {
+    if (err instanceof AiServiceUnavailableError) throw err;
+    throw new AiServiceUnavailableError("Failed to parse skill gap analysis from AI model.");
   }
 }

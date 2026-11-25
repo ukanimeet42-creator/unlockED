@@ -5,14 +5,16 @@ export const APP_DESCRIPTION = "AI-powered education and career platform that he
 export const ROUTES = {
   // Public
   HOME: "/",
-  ABOUT: "/about",
-  CONTACT: "/contact",
+  COURSES: "/courses",
+  COURSE_PUBLIC: (id: string) => `/courses/${id}`,
   PORTFOLIO: (username: string) => `/portfolio/${username}`,
+  VERIFY_CERTIFICATE: (code: string) => `/verify/${code}`,
 
   // Auth
   LOGIN: "/login",
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",
+  RESET_PASSWORD: "/reset-password",
   VERIFY_EMAIL: "/verify-email",
   ONBOARDING: "/onboarding",
   AUTH_CALLBACK: "/api/auth/callback",

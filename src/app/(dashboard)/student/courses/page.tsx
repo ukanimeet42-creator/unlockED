@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { Search, BookOpen, Clock, ArrowRight, CheckCircle2, Sparkles, Layers } from "lucide-react";
@@ -8,74 +8,105 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { INITIAL_COURSES } from "@/lib/data/mock-data";
 import { COURSE_CATEGORIES } from "@/lib/constants";
+import type { Course } from "@/types";
 
 export default function CoursesCatalogPage() {
   const { enrolledCourseIds, enrollInCourse } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
 
-  const filteredCourses = INITIAL_COURSES.filter((course) => {
+  useEffect(() => {
+    fetch("/api/courses")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.courses) setCourses(json.courses);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filteredCourses = courses.filter((course) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
-
+      !q ||
+      course.title.toLowerCase().includes(q) ||
+      course.description.toLowerCase().includes(q) ||
+      course.tags.some((t) => t.toLowerCase().includes(q));
     const matchesCategory =
       selectedCategory === "All" || course.category === selectedCategory;
-
-    return matchesSearch && matchesCategory;
+    const matchesDifficulty =
+      selectedDifficulty === "all" || course.difficulty === selectedDifficulty;
+    return matchesSearch && matchesCategory && matchesDifficulty;
   });
 
+  const handleEnroll = async (courseId: string) => {
+    setEnrollingId(courseId);
+    await enrollInCourse(courseId);
+    setEnrollingId(null);
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-16">
-      {/* Header */}
+    <div className="space-y-8 pb-16">
       <div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0F271D] border border-[#16382C] text-[#00DC82] text-xs font-mono mb-2">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Production-Calibrated Curricula</span>
+          <span>Knowledge Explorer</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-[#F0FDF4]">
           Explore Engineering Tracks
         </h1>
         <p className="text-xs sm:text-sm text-[#8FA69B] mt-1 max-w-2xl">
-          Deep-dive curricula engineered to prepare you for actual engineering roles with theory, code examples, interactive MCQs, and hands-on coding challenges.
+          Production-calibrated curricula with architectural theory, executable code examples, MCQ checkpoints, and hands-on challenges.
         </p>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+      <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-[#8FA69B] absolute left-3 top-3.5" />
           <Input
-            placeholder="Search tracks, languages, tools (e.g. Next.js, Go, AI, Kubernetes)..."
+            placeholder="Search tracks, tools (Next.js, Go, RAG, Kubernetes)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-[#0A1913] border-[#143326] text-[#F0FDF4] placeholder:text-[#5D7A6E] focus:border-[#10B981]"
+            className="pl-9 bg-[#0A1913] border-[#143326] text-[#F0FDF4]"
           />
         </div>
 
-        {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedDifficulty}
+            onChange={(e) => setSelectedDifficulty(e.target.value)}
+            aria-label="Difficulty filter"
+            className="h-9 rounded-lg border border-[#143326] bg-[#0A1913] px-3 text-xs text-[#E6F4EA] focus:border-[#10B981] focus:outline-none"
+          >
+            <option value="all">All Levels</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+
           <button
             onClick={() => setSelectedCategory("All")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
               selectedCategory === "All"
-                ? "bg-[#00DC82] text-slate-950 font-bold shadow-[0_0_12px_rgba(0,220,130,0.3)]"
-                : "bg-[#0A1913] text-[#8FA69B] border border-[#143326] hover:text-[#F0FDF4] hover:border-[#10B981]/50"
+                ? "bg-[#00DC82] text-slate-950 font-bold"
+                : "bg-[#0A1913] text-[#8FA69B] border border-[#143326] hover:text-[#F0FDF4]"
             }`}
           >
-            All Tracks ({INITIAL_COURSES.length})
+            All ({courses.length})
           </button>
           {COURSE_CATEGORIES.slice(0, 5).map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === category
-                  ? "bg-[#00DC82] text-slate-950 font-bold shadow-[0_0_12px_rgba(0,220,130,0.3)]"
-                  : "bg-[#0A1913] text-[#8FA69B] border border-[#143326] hover:text-[#F0FDF4] hover:border-[#10B981]/50"
+                  ? "bg-[#00DC82] text-slate-950 font-bold"
+                  : "bg-[#0A1913] text-[#8FA69B] border border-[#143326] hover:text-[#F0FDF4]"
               }`}
             >
               {category}
@@ -84,12 +115,17 @@ export default function CoursesCatalogPage() {
         </div>
       </div>
 
-      {/* Course Cards Grid */}
-      {filteredCourses.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-64 rounded-2xl bg-[#0A1913] border border-[#143326] animate-pulse" />
+          ))}
+        </div>
+      ) : filteredCourses.length === 0 ? (
         <div className="py-20 text-center rounded-2xl bg-[#0A1913] border border-[#143326] p-8">
           <BookOpen className="w-12 h-12 text-[#143326] mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-[#F0FDF4]">No courses match your filter</h3>
-          <p className="text-sm text-[#8FA69B] mt-1">Try resetting the category filter or searching with different keywords.</p>
+          <p className="text-sm text-[#8FA69B] mt-1">Try resetting the category or difficulty filter.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -100,7 +136,7 @@ export default function CoursesCatalogPage() {
               <Card
                 key={course.id}
                 hoverEffect
-                className="p-6 bg-[#0A1913] border-[#143326] flex flex-col justify-between overflow-hidden relative group"
+                className="p-6 bg-[#0A1913] border-[#143326] flex flex-col justify-between group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -110,7 +146,7 @@ export default function CoursesCatalogPage() {
                         <Clock className="w-3.5 h-3.5 text-[#10B981]" />
                         {course.duration_weeks} Weeks
                       </span>
-                      <Badge variant="secondary" className="capitalize text-[11px] bg-[#07130E] border-[#143326] text-[#8FA69B]">
+                      <Badge variant="secondary" className="capitalize text-[11px]">
                         {course.difficulty}
                       </Badge>
                     </div>
@@ -138,7 +174,7 @@ export default function CoursesCatalogPage() {
                 <div className="mt-6 pt-4 border-t border-[#143326] flex items-center justify-between">
                   <span className="text-xs font-mono text-[#5D7A6E] flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5 text-[#10B981]" />
-                    {course.lesson_count || 4} Comprehensive Modules
+                    {course.lesson_count || 4} Modules
                   </span>
 
                   <div className="flex items-center gap-2">
@@ -146,22 +182,23 @@ export default function CoursesCatalogPage() {
                       <Link href={`/student/courses/${course.id}`}>
                         <Button size="sm" variant="gradient" className="gap-1.5 text-xs">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          Continue Track
+                          Continue
                         </Button>
                       </Link>
                     ) : (
                       <Button
                         size="sm"
                         variant="gradient"
-                        onClick={() => enrollInCourse(course.id)}
+                        disabled={enrollingId === course.id}
+                        onClick={() => handleEnroll(course.id)}
                         className="gap-1.5 text-xs"
                       >
-                        Enroll Track
+                        {enrollingId === course.id ? "Enrolling..." : "Enroll Track"}
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Button>
                     )}
                     <Link href={`/student/courses/${course.id}`}>
-                      <Button size="sm" variant="secondary" className="text-xs bg-[#07130E] border-[#143326] text-[#8FA69B] hover:text-[#F0FDF4]">
+                      <Button size="sm" variant="secondary" className="text-xs">
                         Syllabus
                       </Button>
                     </Link>

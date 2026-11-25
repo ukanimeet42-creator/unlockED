@@ -1,23 +1,30 @@
 import { z } from "zod";
-import { generateAiContent, sanitizeAiInput } from "./gemini";
+import { AiServiceUnavailableError, generateAiContent, sanitizeAiInput } from "./gemini";
+
+const NormalizedPhaseStatusSchema = z.preprocess((v) => {
+  const s = String(v || "").toLowerCase().trim();
+  if (s.includes("comp") || s.includes("done")) return "completed";
+  if (s.includes("prog") || s.includes("active")) return "in_progress";
+  return "not_started";
+}, z.enum(["not_started", "in_progress", "completed"]));
 
 export const RoadmapPhaseSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string(),
-  duration_weeks: z.number(),
-  skills: z.array(z.string()),
-  projects: z.array(z.string()),
-  milestones: z.array(z.string()),
-  status: z.enum(["not_started", "in_progress", "completed"]),
-  order: z.number(),
+  duration_weeks: z.coerce.number(),
+  skills: z.array(z.string()).default([]),
+  projects: z.array(z.string()).default([]),
+  milestones: z.array(z.string()).default([]),
+  status: NormalizedPhaseStatusSchema,
+  order: z.coerce.number(),
 });
 
 export const PersonalizedRoadmapSchema = z.object({
   targetRole: z.string(),
-  estimatedWeeksTotal: z.number(),
+  estimatedWeeksTotal: z.coerce.number(),
   phases: z.array(RoadmapPhaseSchema),
-  milestoneBadges: z.array(z.string()),
+  milestoneBadges: z.array(z.string()).default([]),
 });
 
 export type PersonalizedRoadmap = z.infer<typeof PersonalizedRoadmapSchema>;
@@ -27,108 +34,61 @@ export async function generatePersonalizedRoadmap({
   currentLevel,
   timeCommitmentHoursPerWeek,
   focusAreas,
+  existingSkills = [],
 }: {
   targetRole: string;
   currentLevel: string;
   timeCommitmentHoursPerWeek: number;
   focusAreas: string[];
+  existingSkills?: string[];
 }): Promise<PersonalizedRoadmap> {
-  const safeRole = sanitizeAiInput(targetRole);
-  const safeLevel = sanitizeAiInput(currentLevel);
+  const safeRole = sanitizeAiInput(targetRole) || "Full-Stack Software Engineer";
+  const safeLevel = sanitizeAiInput(currentLevel) || "Beginner";
+  const safeFocus = focusAreas.map((f) => sanitizeAiInput(f)).filter(Boolean);
+  const safeSkills = existingSkills.map((s) => sanitizeAiInput(s)).filter(Boolean);
 
   const prompt = `
-Create an intensive, step-by-step career acceleration roadmap:
-Target Role: ${safeRole || "Associate Cloud Infrastructure SRE"}
-Current Level: ${safeLevel || "Beginner to Intermediate"}
-Weekly Availability: ${timeCommitmentHoursPerWeek || 15} hours/week
-Focus Areas: ${focusAreas.join(", ") || "Cloud Architecture, Containerization, Microservices"}
+Create a step-by-step career engineering roadmap customized for:
+- Target Role: ${safeRole}
+- Current Experience Level: ${safeLevel}
+- Weekly Study Availability: ${timeCommitmentHoursPerWeek || 15} hours/week
+- Already Acquired Skills: ${safeSkills.length > 0 ? safeSkills.join(", ") : "Starting fresh"}
+- Focus Areas: ${safeFocus.length > 0 ? safeFocus.join(", ") : "Core Systems, Practical Projects, Testing"}
 
+Generate 4 distinct, sequential phases calibrated realistically to ${timeCommitmentHoursPerWeek || 15} hrs/week.
 Return pure JSON matching:
 {
-  "targetRole": "${safeRole}",
+  "targetRole": "${safeRole.replace(/"/g, '\\"')}",
   "estimatedWeeksTotal": 16,
   "phases": [
     {
       "id": "phase-1",
-      "title": "Phase 1: Systems Foundations & Concurrency",
-      "description": "Master Go data structures, goroutines, and network I/O.",
+      "title": "Phase 1: ...",
+      "description": "...",
       "duration_weeks": 4,
-      "skills": ["Go", "Linux Internals"],
-      "projects": ["Multi-Threaded Log Parser CLI"],
-      "milestones": ["Score 80%+ on Go Benchmark"],
+      "skills": ["Skill A", "Skill B"],
+      "projects": ["Concrete portfolio project"],
+      "milestones": ["Measurable verification target"],
       "status": "in_progress",
       "order": 1
     }
   ],
-  "milestoneBadges": ["Go Concurrency Verified", "Kubernetes Operator Badge"]
+  "milestoneBadges": ["Target Milestone 1", "Target Milestone 2"]
 }
 `;
 
-  try {
-    const rawJson = await generateAiContent({
-      systemInstruction: "You are the UnlockED Curriculum Architect. Build realistic, project-focused technical roadmaps that prioritize undeniable proof over passive reading. Return JSON only.",
-      prompt,
-      responseMimeType: "application/json",
-    });
+  const rawJson = await generateAiContent({
+    systemInstruction:
+      "You are the UnlockED Curriculum Architect. Build practical, project-centered engineering roadmaps calibrated to the student's actual weekly capacity and starting level. Return pure JSON only.",
+    prompt,
+    responseMimeType: "application/json",
+  });
 
+  try {
     const parsed = JSON.parse(rawJson);
     return PersonalizedRoadmapSchema.parse(parsed);
-  } catch {
-    return {
-      targetRole: safeRole || "Associate Cloud Infrastructure SRE",
-      estimatedWeeksTotal: 16,
-      phases: [
-        {
-          id: "p1",
-          title: "Phase 1: High-Concurrency Backend Architecture",
-          description: "Establish deep command over Go syntax, goroutines, worker pools, and memory profiling.",
-          duration_weeks: 4,
-          skills: ["Go (Golang)", "HTTP/REST", "PostgreSQL", "Connection Pooling"],
-          projects: ["High-Throughput Task Dispatcher CLI"],
-          milestones: ["Pass Go Benchmark with 85%+ score"],
-          status: "in_progress",
-          order: 1,
-        },
-        {
-          id: "p2",
-          title: "Phase 2: Containerization & Cluster Orchestration",
-          description: "Package services into minimal Alpine Docker containers and orchestrate multi-node deployments with Kubernetes.",
-          duration_weeks: 4,
-          skills: ["Docker", "Kubernetes", "Helm", "Ingress Controllers"],
-          projects: ["Clustered Payment Gateway Mock Deployment"],
-          milestones: ["Deploy 3-replica cluster with automated health checks"],
-          status: "not_started",
-          order: 2,
-        },
-        {
-          id: "p3",
-          title: "Phase 3: Observability & Automated Mitigation",
-          description: "Implement distributed tracing, Prometheus counter/gauge metrics, and automated rollback daemons.",
-          duration_weeks: 4,
-          skills: ["Prometheus", "Grafana", "Alertmanager", "Chaos Testing"],
-          projects: ["PulseGuard: Autonomous Rollback Daemon"],
-          milestones: ["Simulate latency spike and verify automated zero-downtime rollback"],
-          status: "not_started",
-          order: 3,
-        },
-        {
-          id: "p4",
-          title: "Phase 4: Hiring Partner Telemetry & Capstone",
-          description: "Polish code repository, pass AI architectural evaluation, and publish verified candidate attestation to recruiter hub.",
-          duration_weeks: 4,
-          skills: ["System Design", "CI/CD Automations", "Technical Communication"],
-          projects: ["Production Portfolio Publication"],
-          milestones: ["Attain 90+ Career Readiness Index and apply to hiring partners"],
-          status: "not_started",
-          order: 4,
-        },
-      ],
-      milestoneBadges: [
-        "Go Concurrency Certified",
-        "Kubernetes Cluster Operator",
-        "Prometheus Telemetry Attestation",
-        "UnlockED Verified SRE Readiness",
-      ],
-    };
+  } catch (err) {
+    if (err instanceof AiServiceUnavailableError) throw err;
+    throw new AiServiceUnavailableError("Failed to parse roadmap structure from AI model.");
   }
 }
